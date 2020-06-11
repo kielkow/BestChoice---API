@@ -31,10 +31,12 @@ class CreateOrderService {
   ) {}
 
   public async execute({ customer_id, products }: IRequest): Promise<Order> {
+    // Check if customer exists
     const customer = await this.customersRepository.findById(customer_id);
 
-    if (!customer) throw new AppError('Customer does not exists.');
+    if (!customer) throw new AppError('Customer does not exists.', 400);
 
+    // Find products
     const productsIds = products.map(product => {
       return { id: product.id };
     });
@@ -43,10 +45,18 @@ class CreateOrderService {
       productsIds,
     );
 
-    if (foundProducts.length === 0) {
-      throw new AppError('No one product was found.');
+    // Check if have some product
+    if (
+      foundProducts.length === 0 ||
+      foundProducts.length !== productsIds.length
+    ) {
+      throw new AppError(
+        'Any product was not found. Please check the products ID.',
+        400,
+      );
     }
 
+    // Format products
     const formatProducts = foundProducts.map(product => {
       const formatProduct = products.filter(p => {
         return p.id === product.id;
@@ -59,6 +69,7 @@ class CreateOrderService {
       };
     });
 
+    // Create order
     const order = await this.ordersRepository.create({
       customer,
       products: formatProducts,

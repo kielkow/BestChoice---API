@@ -16,21 +16,21 @@ class OrdersProducts {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Entity('orders')
-  order: Order;
-
-  @Entity('products')
-  product: Product;
-
-  @ManyToOne(() => Product, product => product.id)
-  @JoinColumn({ name: 'product_id' })
+  @Column()
   product_id: string;
 
-  @ManyToOne(() => Order, order => order.id)
-  @JoinColumn({ name: 'order_id' })
-  order_id: string;
+  @ManyToOne(() => Product)
+  @JoinColumn({ name: 'product_id' })
+  product: Product;
 
   @Column()
+  order_id: string;
+
+  @ManyToOne(() => Order)
+  @JoinColumn({ name: 'order_id' })
+  order: Order;
+
+  @Column({ type: 'decimal', precision: 5, scale: 2, default: 0 })
   price: number;
 
   @Column()

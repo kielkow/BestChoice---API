@@ -1,8 +1,14 @@
+/* eslint-disable no-await-in-loop */
+/* eslint-disable no-restricted-syntax */
 import { getRepository, Repository, In } from 'typeorm';
 
+import AppError from '@shared/errors/AppError';
+
 import IProductsRepository from '@modules/products/repositories/IProductsRepository';
+
 import ICreateProductDTO from '@modules/products/dtos/ICreateProductDTO';
 import IUpdateProductsQuantityDTO from '@modules/products/dtos/IUpdateProductsQuantityDTO';
+
 import Product from '../entities/Product';
 
 interface IFindProducts {
@@ -53,21 +59,25 @@ class ProductsRepository implements IProductsRepository {
   public async updateQuantity(
     products: IUpdateProductsQuantityDTO[],
   ): Promise<Product[]> {
-    const updatedProducts: Product[] = [];
+    const updatedProductsQuantity: Product[] = [];
 
-    products.forEach(async product => {
+    for (const product of products) {
       const foundProduct = await this.ormRepository.findOne(product.id);
 
-      if (foundProduct) {
-        foundProduct.quantity = product.quantity;
-
-        const updatedProduct = await this.ormRepository.save(foundProduct);
-
-        updatedProducts.push(updatedProduct);
+      if (!foundProduct) {
+        throw new AppError(`Product ${product.id} not found to update.`, 400);
       }
-    });
 
-    return updatedProducts;
+      if (foundProduct.quantity - product.quantity < 0) {
+        throw new AppError(`No ${foundProduct.name} enough.`, 400);
+      }
+
+      foundProduct.quantity -= product.quantity;
+
+      updatedProductsQuantity.push(await this.ormRepository.save(foundProduct));
+    }
+
+    return updatedProductsQuantity;
   }
 }
 

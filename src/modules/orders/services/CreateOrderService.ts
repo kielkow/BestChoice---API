@@ -1,3 +1,4 @@
+/* eslint-disable no-param-reassign */
 import { inject, injectable } from 'tsyringe';
 
 import AppError from '@shared/errors/AppError';
@@ -36,36 +37,17 @@ class CreateOrderService {
 
     if (!customer) throw new AppError('Customer does not exists.', 400);
 
-    // Find products
-    const productsIds = products.map(product => {
-      return { id: product.id };
-    });
-
-    const foundProducts = await this.productsRepository.findAllById(
-      productsIds,
+    // Update and check quantity of each product
+    const updatedProductsQuantity = await this.productsRepository.updateQuantity(
+      products,
     );
 
-    // Check if have some product
-    if (
-      foundProducts.length === 0 ||
-      foundProducts.length !== productsIds.length
-    ) {
-      throw new AppError(
-        'Any product was not found. Please check the products ID.',
-        400,
-      );
-    }
-
-    // Format products
-    const formatProducts = foundProducts.map(product => {
-      const formatProduct = products.filter(p => {
-        return p.id === product.id;
-      });
-
+    // Format updated products
+    const formatProducts = updatedProductsQuantity.map((product, index) => {
       return {
         product_id: product.id,
         price: product.price,
-        quantity: formatProduct[0].quantity,
+        quantity: products[index].quantity,
       };
     });
 
